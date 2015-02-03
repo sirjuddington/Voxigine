@@ -9,8 +9,10 @@ namespace Engine
 	bool	loadConfig();
 	void	saveConfig();
 	bool	mainLoop();
+	bool	processEvents();
 	void	shutDown();
 	void	resizeWindow(int width, int height);
+	void	lockMouse(bool lock);
 }
 
 #endif//__ENGINE_H__

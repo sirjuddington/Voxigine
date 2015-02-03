@@ -28,14 +28,14 @@
  * INCLUDES
  *******************************************************************/
 #include "Main.h"
+#include "glew/glew.h"
 #include "Engine.h"
 #include "Console.h"
 #include "Utilities/Tokenizer.h"
-#include "glew/glew.h"
+#include "Renderer/StandardRenderer.h"
+#include "Game/Player.h"
 #include <SFML/Graphics.hpp>
 #include <fstream>
-
-#include "Shader.h"
 
 
 /*******************************************************************
@@ -46,11 +46,12 @@ namespace Engine
 	sf::RenderWindow*	window = nullptr;
 	std::ofstream		log;
 	sf::Clock			clock;
-	sf::Time			last_time;
-
-	// Testing
-	Shader* shader_vertex = nullptr;
-	Shader* shader_fragment = nullptr;
+	sf::Time			elapsed;
+	sf::Time			frame_time = sf::seconds(1.0f / 60.0f);
+	float				frame_mult = 1.0f;
+	Renderer*			renderer = nullptr;
+	Player				player;
+	bool				mouse_locked = false;
 }
 CVAR(Int, vid_win_width, 1024, CVAR_SAVE|CVAR_LOCKED)
 CVAR(Int, vid_win_height, 768, CVAR_SAVE|CVAR_LOCKED)
@@ -59,6 +60,9 @@ CVAR(Int, vid_fs_height, -1, CVAR_SAVE|CVAR_LOCKED)
 CVAR(Bool, vid_fullscreen, false, CVAR_SAVE|CVAR_LOCKED)
 CVAR(Int, vid_aa_level, 0, CVAR_SAVE)
 CVAR(Bool, vid_vsync, true, CVAR_SAVE)
+CVAR(Int, vid_max_framerate, 120, CVAR_SAVE)
+CVAR(Float, mouse_sensitivity, 0.3f, CVAR_SAVE)
+CVAR(Bool, test_slow, false, CVAR_SAVE)
 
 
 /*******************************************************************
@@ -86,15 +90,9 @@ bool Engine::init()
 	// Init GLEW
 	glewInit();
 
-	// Test
-	shader_vertex = new Shader(GL_VERTEX_SHADER);
-	shader_fragment = new Shader(GL_FRAGMENT_SHADER);
-	shader_vertex->openFile("shaders/vertex.glsl");
-	shader_fragment->openFile("shaders/fragment.glsl");
-	ShaderProgram program;
-	program.addShader(shader_vertex);
-	program.addShader(shader_fragment);
-	program.link();
+	// Create/init renderer
+	renderer = new StandardRenderer();
+	renderer->init();
 
 	return true;
 }
@@ -126,11 +124,13 @@ bool Engine::createWindow()
 	settings.majorVersion = 3;
 	settings.minorVersion = 0;
 	settings.antialiasingLevel = vid_aa_level;
+	settings.depthBits = 24;
 	if (vid_fullscreen)
 		window = new sf::RenderWindow(sf::VideoMode(vid_fs_width, vid_fs_height), "Voxigine", sf::Style::Fullscreen, settings);
 	else
 		window = new sf::RenderWindow(sf::VideoMode(vid_win_width, vid_win_height), "Voxigine", sf::Style::Default, settings);
 	window->setVerticalSyncEnabled(vid_vsync);
+	//window->setFramerateLimit(vid_max_framerate);
 
 	logMessage(1, "Set video mode to: %dx%d (%s)", window->getSize().x, window->getSize().y, vid_fullscreen ? "fullscreen" : "windowed");
 	logMessage(1, "Antialiasing level: %dx", window->getSettings().antialiasingLevel);
@@ -194,6 +194,78 @@ void Engine::saveConfig()
  *******************************************************************/
 bool Engine::mainLoop()
 {
+	elapsed += clock.restart();
+
+	int loopn = 0;
+	while (elapsed >= frame_time)
+	{
+		//if (loopn > 0)
+		//	logMessage(0, "%d: elapsed %dms, frametime %dms", loopn, elapsed.asMilliseconds(), frame_time.asMilliseconds());
+
+		elapsed -= frame_time;
+
+		// Calculate frame multiplier
+		frame_mult = 1.0f;
+		//if (elapsed < frame_time)
+		//	frame_mult = (float)elapsed.asMilliseconds() / (float)frame_time.asMilliseconds();
+
+		// Process window events
+		if (!processEvents())
+			return false;
+
+		// Mouse cursor lock
+		if (mouse_locked)
+			sf::Mouse::setPosition(sf::Vector2i(window->getSize().x / 2, window->getSize().y / 2), *window);
+
+		// Temporary movement keys
+		if (!Console::isActive())
+		{
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+				player.move(0.1f * frame_mult);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+				player.move(-0.1f * frame_mult);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+				player.strafe(-0.1f * frame_mult);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+				player.strafe(0.1f * frame_mult);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+				player.turn(-1.0f * frame_mult);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+				player.turn(1.0f * frame_mult);
+
+			renderer->getCamera().set(player.getEyePosition(), player.getDirection());
+		}
+
+		loopn++;
+	}
+
+	window->clear(sf::Color::Black);
+
+	renderer->renderScene(window->getSize().x, window->getSize().y);
+
+	if (test_slow)
+		sf::sleep(sf::milliseconds(50));
+
+	if (Console::isActive())
+	{
+		window->resetGLStates();
+		Console::draw(window);
+	}
+
+	//int ms = clock.getElapsedTime().asMilliseconds() - last_time.asMilliseconds();
+	//last_time = clock.getElapsedTime();
+
+	window->display();
+
+	return true;
+}
+
+/* Engine::processEvents
+ * Polls and processes any SFML window events. Returns false if the
+ * main loop must exit
+ *******************************************************************/
+bool Engine::processEvents()
+{
 	sf::Event event;
 	while (window->pollEvent(event))
 	{
@@ -206,7 +278,7 @@ bool Engine::mainLoop()
 
 		// Resize window
 		else if (event.type == sf::Event::Resized)
-			window->setView(sf::View(sf::FloatRect(0.0f, 0.0f, event.size.width, event.size.height)));
+			window->setView(sf::View(sf::FloatRect(0.0f, 0.0f, (float)event.size.width, (float)event.size.height)));
 
 		else if (event.type == sf::Event::KeyPressed)
 		{
@@ -216,7 +288,10 @@ bool Engine::mainLoop()
 
 			// Tilde (open console)
 			if (event.key.code == sf::Keyboard::Tilde)
+			{
 				Console::activate(!Console::isActive());
+				lockMouse(!Console::isActive());
+			}
 
 			// Escape (exit)
 			if (event.key.code == sf::Keyboard::Escape)
@@ -227,17 +302,26 @@ bool Engine::mainLoop()
 		}
 
 		else if (event.type == sf::Event::TextEntered)
-			Console::handleText(event.text);
+		{
+			if (Console::isActive())
+				Console::handleText(event.text);
+		}
+
+		else if (event.type == sf::Event::MouseMoved)
+		{
+			int x_diff = event.mouseMove.x - (window->getSize().x / 2);
+			int y_diff = event.mouseMove.y - (window->getSize().y / 2);
+
+			if (mouse_locked)
+			{
+				if (x_diff != 0)
+					player.turn((float)x_diff * (float)mouse_sensitivity * frame_mult);
+
+				if (y_diff != 0)
+					player.pitch(-(float)y_diff * ((float)mouse_sensitivity * 0.02f * frame_mult));
+			}
+		}
 	}
-
-	window->clear(sf::Color::Black);
-
-	Console::draw(window);
-
-	int ms = clock.getElapsedTime().asMilliseconds() - last_time.asMilliseconds();
-	last_time = clock.getElapsedTime();
-
-	window->display();
 
 	return true;
 }
@@ -248,8 +332,6 @@ bool Engine::mainLoop()
 void Engine::shutDown()
 {
 	logMessage(1, "Exiting...");
-	delete shader_vertex;
-	delete shader_fragment;
 
 	saveConfig();
 
@@ -267,6 +349,15 @@ void Engine::resizeWindow(int width, int height)
 
 	window->setSize(sf::Vector2u(width, height));
 	logMessage(1, "Set video mode to: %dx%d (%s)", window->getSize().x, window->getSize().y, vid_fullscreen ? "fullscreen" : "windowed");
+}
+
+/* Engine::lockMouse
+ * Enables/disables mouse cursor lock (for mouselook)
+ *******************************************************************/
+void Engine::lockMouse(bool lock)
+{
+	window->setMouseCursorVisible(!lock);
+	mouse_locked = lock;
 }
 
 

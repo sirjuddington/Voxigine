@@ -1,7 +1,11 @@
 
 #version 330
+
+smooth in vec4 vertex_colour;
+
 out vec4 outputColor;
+
 void main()
 {
-   outputColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+   outputColor = vertex_colour;
 }

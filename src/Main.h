@@ -4,8 +4,8 @@
 
 // System includes
 #ifdef _MSC_VER
-#include <windows.h>
 #define _CRT_SECURE_NO_WARNINGS 1
+#include <windows.h>
 typedef __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 typedef __int16 int16_t;
@@ -40,6 +40,7 @@ bool stringEqualNoCase(string left, string right);
 
 // Global includes
 #include "CVar.h"
+#include "Structs.h"
 
 // Namespace to hold 'global' variables
 namespace Global

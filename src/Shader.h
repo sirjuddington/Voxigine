@@ -3,6 +3,7 @@
 #define __SHADER_H__
 
 #include <SFML/OpenGL.hpp>
+#include <map>
 
 class Shader
 {

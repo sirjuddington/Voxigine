@@ -175,5 +175,23 @@ bool ShaderProgram::link()
 	logMessage(1, "Shader Program compiled successfully (%d shaders)", shaders.size());
 	valid = true;
 
+	//// Update uniforms list
+	//uniforms.clear();
+	//GLint num_uniforms = 0;
+	//GLint uniform_max_length = 0;
+	//glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &num_uniforms);
+	//glGetProgramiv(id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniform_max_length);
+	//vector<GLchar> name_raw(256);
+	//for (int a = 0; a < num_uniforms; a++)
+	//{
+	//	GLint size = 0;
+	//	GLenum type = 0;
+	//	GLsizei length = 0;
+	//	glGetActiveUniform(id, a, name_raw.size(), &length, &size, &type, &name_raw[0]);
+	//	string name((char*)&name_raw[0], length - 1);
+
+	//	uniforms.push_back(name);
+	//}
+
 	return true;
 }

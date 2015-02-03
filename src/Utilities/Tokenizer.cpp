@@ -40,17 +40,17 @@
 Tokenizer::Tokenizer(CommentTypes comments_style)
 {
 	// Initialize variables
-	current = nullptr;
-	start = nullptr;
-	size = 0;
-	comments = comments_style;
-	debug = false;
-	special = ";,:|={}/";	// Default special characters
-	name = "nothing";
-	line = 1;
-	t_start = 0;
-	t_end = 0;
-	decorate = false;
+	_current = nullptr;
+	_start = nullptr;
+	_size = 0;
+	_comments = comments_style;
+	_debug = false;
+	_special = ";,:|={}/";	// Default special characters
+	_name = "nothing";
+	_line = 1;
+	_token_start = 0;
+	_token_end = 0;
+	_decorate = false;
 }
 
 /* Tokenizer::~Tokenizer
@@ -59,7 +59,7 @@ Tokenizer::Tokenizer(CommentTypes comments_style)
 Tokenizer::~Tokenizer()
 {
 	// Free memory if used
-	if (start) free(start);
+	if (_start) free(_start);
 }
 
 /* Tokenizer::openFile
@@ -69,7 +69,7 @@ bool Tokenizer::openFile(string filename, uint32_t offset, uint32_t length)
 {
 	// Open the file
 	FILE *fp = fopen(filename.c_str(), "rb");
-	name = filename;
+	_name = filename;
 
 	// Check file opened
 	if (!fp)
@@ -85,17 +85,17 @@ bool Tokenizer::openFile(string filename, uint32_t offset, uint32_t length)
 		length = ftell(fp) - offset;
 
 	// Setup variables & allocate memory
-	size = length;
-	position = 0;
-	start = current = (char*) malloc(size);
-	end = start + size + 1;
-	line = 1;
-	t_start = 0;
-	t_end = 0;
+	_size = length;
+	_position = 0;
+	_start = _current = (char*)malloc(_size);
+	_end = _start + _size + 1;
+	_line = 1;
+	_token_start = 0;
+	_token_end = 0;
 
 	// Read the file portion
 	fseek(fp, offset, SEEK_SET);
-	fread(start, 1, size, fp);
+	fread(_start, 1, _size, fp);
 	fclose(fp);
 
 	return true;
@@ -112,17 +112,17 @@ bool Tokenizer::openString(string text, uint32_t offset, uint32_t length, string
 		length = (uint32_t) text.length() - offset;
 
 	// Setup variables & allocate memory
-	size = length;
-	position = 0;
-	line = 1;
-	t_start = 0;
-	t_end = 0;
-	start = current = (char*) malloc(size);
-	end = start + size + 1;
-	name = source;
+	_size = length;
+	_position = 0;
+	_line = 1;
+	_token_start = 0;
+	_token_end = 0;
+	_start = _current = (char*)malloc(_size);
+	_end = _start + _size + 1;
+	_name = source;
 
 	// Copy the string portion
-	memcpy(start, ((char*) text.c_str()) + offset, size);
+	memcpy(_start, ((char*)text.c_str()) + offset, _size);
 
 	return true;
 }
@@ -139,19 +139,19 @@ bool Tokenizer::openMem(const char* mem, uint32_t length, string source)
 		return false;
 	}
 
-	name = source;
+	_name = source;
 
 	// Setup variables & allocate memory
-	size = length;
-	position = 0;
-	line = 1;
-	t_start = 0;
-	t_end = 0;
-	start = current = (char*) malloc(size);
-	end = start + size + 1;
+	_size = length;
+	_position = 0;
+	_line = 1;
+	_token_start = 0;
+	_token_end = 0;
+	_start = _current = (char*)malloc(_size);
+	_end = _start + _size + 1;
 
 	// Copy the data
-	memcpy(start, mem, size);
+	memcpy(_start, mem, _size);
 
 	return true;
 }
@@ -168,19 +168,19 @@ bool Tokenizer::openMem(const uint8_t* mem, uint32_t length, string source)
 		return false;
 	}
 
-	name = source;
+	_name = source;
 
 	// Setup variables & allocate memory
-	size = length;
-	position = 0;
-	line = 1;
-	t_start = 0;
-	t_end = 0;
-	start = current = (char*) malloc(size);
-	end = start + size + 1;
+	_size = length;
+	_position = 0;
+	_line = 1;
+	_token_start = 0;
+	_token_end = 0;
+	_start = _current = (char*)malloc(_size);
+	_end = _start + _size + 1;
 
 	// Copy the data
-	memcpy(start, mem, size);
+	memcpy(_start, mem, _size);
 
 	return true;
 }
@@ -203,8 +203,8 @@ bool Tokenizer::openMem(const uint8_t* mem, uint32_t length, string source)
 //	size = mem->getSize();
 //	position = 0;
 //	line = 1;
-//	t_start = 0;
-//	t_end = 0;
+//	_token_start = 0;
+//	_token_end = 0;
 //	start = current = (char*) malloc(size);
 //	end = start + size + 1;
 //
@@ -233,9 +233,9 @@ bool Tokenizer::isWhitespace(char p)
 bool Tokenizer::isSpecialCharacter(char p)
 {
 	// Check through special tokens string
-	for (unsigned a = 0; a < special.size(); a++)
+	for (unsigned a = 0; a < _special.size(); a++)
 	{
-		if (special[a] == p)
+		if (_special[a] == p)
 			return true;
 	}
 
@@ -247,22 +247,22 @@ bool Tokenizer::isSpecialCharacter(char p)
  *******************************************************************/
 bool Tokenizer::incrementCurrent()
 {
-	if (position >= size - 1)
+	if (_position >= _size - 1)
 	{
 		// At end of text, return false
-		position = size;
+		_position = _size;
 		return false;
 	}
 	else
 	{
 		// Check for newline
-		if (current[0] == '\n')
-			line++;
+		if (_current[0] == '\n')
+			_line++;
 
 		// Increment position & current pointer
-		position++;
-		current++;
-		t_end++;
+		_position++;
+		_current++;
+		_token_end++;
 		return true;
 	}
 }
@@ -273,7 +273,7 @@ bool Tokenizer::incrementCurrent()
 void Tokenizer::skipLineComment()
 {
 	// Increment position until a newline or end is found
-	while (current[0] != '\n' && current[0] != 13)
+	while (_current[0] != '\n' && _current[0] != 13)
 	{
 		if (!incrementCurrent())
 			return;
@@ -289,7 +289,7 @@ void Tokenizer::skipLineComment()
 void Tokenizer::skipMultilineComment()
 {
 	// Increment position until '*/' or end is found
-	while (!(current[0] == '*' && current[1] == '/'))
+	while (!(_current[0] == '*' && _current[1] == '/'))
 	{
 		if (!incrementCurrent())
 			return;
@@ -305,9 +305,9 @@ void Tokenizer::skipMultilineComment()
  *******************************************************************/
 void Tokenizer::readToken(bool toeol)
 {
-	token_current.clear();
+	_token_current.clear();
 	bool ready = false;
-	qstring = false;
+	_qstring = false;
 
 	// Increment pointer to next token
 	while (!ready)
@@ -315,7 +315,7 @@ void Tokenizer::readToken(bool toeol)
 		ready = true;
 
 		// Increment pointer until non-whitespace is found
-		while (isWhitespace(current[0]))
+		while (isWhitespace(_current[0]))
 		{
 			// Return if end of text found
 			if (!incrementCurrent())
@@ -323,24 +323,24 @@ void Tokenizer::readToken(bool toeol)
 		}
 
 		// Skip C-style comments
-		if (comments & CCOMMENTS)
+		if (_comments & CCOMMENTS)
 		{
 			// Check if we have a line comment
-			if (current + 1 < end && current[0] == '/' && current[1] == '/')
+			if (_current + 1 < _end && _current[0] == '/' && _current[1] == '/')
 			{
 				ready = false;
 
 				// DECORATE //$ handling
-				if (!decorate)
+				if (!_decorate)
 					skipLineComment();
-				else if (current + 2 < end && current[2] != '$')
+				else if (_current + 2 < _end && _current[2] != '$')
 					skipLineComment();
 				else
 					ready = true;
 			}
 
 			// Check if we have a multiline comment
-			if (current + 1 != end && current[0] == '/' && current[1] == '*')
+			if (_current + 1 != _end && _current[0] == '/' && _current[1] == '*')
 			{
 				skipMultilineComment(); // Skip it
 				ready = false;
@@ -348,9 +348,9 @@ void Tokenizer::readToken(bool toeol)
 		}
 
 		// Skip '##' comments
-		if (comments & DCOMMENTS)
+		if (_comments & DCOMMENTS)
 		{
-			if (current + 1 != end && current[0] == '#' && current[1] == '#')
+			if (_current + 1 != _end && _current[0] == '#' && _current[1] == '#')
 			{
 				skipLineComment(); // Skip it
 				ready = false;
@@ -358,9 +358,9 @@ void Tokenizer::readToken(bool toeol)
 		}
 
 		// Skip '#' comments
-		if (comments & HCOMMENTS)
+		if (_comments & HCOMMENTS)
 		{
-			if (current + 1 != end && current[0] == '#')
+			if (_current + 1 != _end && _current[0] == '#')
 			{
 				skipLineComment(); // Skip it
 				ready = false;
@@ -368,9 +368,9 @@ void Tokenizer::readToken(bool toeol)
 		}
 
 		// Skip ';' comments
-		if (comments & SCOMMENTS)
+		if (_comments & SCOMMENTS)
 		{
-			if (current[0] == ';')
+			if (_current[0] == ';')
 			{
 				skipLineComment(); // Skip it
 				ready = false;
@@ -378,35 +378,35 @@ void Tokenizer::readToken(bool toeol)
 		}
 
 		// Check for end of text
-		if (position == size)
+		if (_position == _size)
 			return;
 	}
 
 	// Init token delimiters
-	t_start = position;
-	t_end = position;
+	_token_start = _position;
+	_token_end = _position;
 
 	// If we're at a special character, it's our token
-	if (isSpecialCharacter(current[0]))
+	if (isSpecialCharacter(_current[0]))
 	{
-		token_current += current[0];
-		t_end = position + 1;
+		_token_current += _current[0];
+		_token_end = _position + 1;
 		incrementCurrent();
 		return;
 	}
 
 	// Now read the token
-	if (current[0] == '\"')   // If we have a literal string (enclosed with "")
+	if (_current[0] == '\"')   // If we have a literal string (enclosed with "")
 	{
-		qstring = true;
+		_qstring = true;
 
 		// Skip opening "
 		incrementCurrent();
 
 		// Read literal string (include whitespace)
-		while (current[0] != '\"')
+		while (_current[0] != '\"')
 		{
-			token_current += current[0];
+			_token_current += _current[0];
 
 			if (!incrementCurrent())
 				return;
@@ -418,14 +418,14 @@ void Tokenizer::readToken(bool toeol)
 	else
 	{
 		// Read token (don't include whitespace)
-		while (!((!toeol && isWhitespace(current[0])) || current[0] == '\n'))
+		while (!((!toeol && isWhitespace(_current[0])) || _current[0] == '\n'))
 		{
 			// Return if special character found
-			if (!toeol && isSpecialCharacter(current[0]))
+			if (!toeol && isSpecialCharacter(_current[0]))
 				return;
 
 			// Add current character to the token
-			token_current += current[0];
+			_token_current += _current[0];
 
 			// Return if end of text found
 			if (!incrementCurrent())
@@ -434,8 +434,8 @@ void Tokenizer::readToken(bool toeol)
 	}
 
 	// Write token to log if debug mode enabled
-	if (debug)
-		logMessage(3, token_current);
+	if (_debug)
+		logMessage(3, _token_current);
 
 	// Return the token
 	return;
@@ -456,7 +456,7 @@ void Tokenizer::skipToken()
 string Tokenizer::getToken()
 {
 	readToken();
-	return token_current;
+	return _token_current;
 }
 
 /* Tokenizer::getLine
@@ -467,7 +467,7 @@ string Tokenizer::getToken()
 string Tokenizer::getLine()
 {
 	readToken(true);
-	return token_current;
+	return _token_current;
 }
 
 /* Tokenizer::getToken
@@ -480,7 +480,7 @@ void Tokenizer::getToken(string* s)
 	readToken();
 
 	// Set string value
-	*s = token_current;
+	*s = _token_current;
 }
 
 /* Tokenizer::peekToken
@@ -489,20 +489,20 @@ void Tokenizer::getToken(string* s)
 string Tokenizer::peekToken()
 {
 	// Backup current position
-	char* c = current;
-	uint32_t p = position;
-	int oline = line;
+	char* c = _current;
+	uint32_t p = _position;
+	int oline = _line;
 
 	// Read the next token
 	readToken();
 
 	// Go back to original position
-	current = c;
-	position = p;
-	line = oline;
+	_current = c;
+	_position = p;
+	_line = oline;
 
 	// Return the token
-	return token_current;
+	return _token_current;
 }
 
 /* Tokenizer::checkToken
@@ -511,7 +511,7 @@ string Tokenizer::peekToken()
 bool Tokenizer::checkToken(string check)
 {
 	readToken();
-	return !(token_current.compare(check));
+	return !(_token_current.compare(check));
 }
 
 /* Tokenizer::getInteger
@@ -523,7 +523,7 @@ int Tokenizer::getInteger()
 	readToken();
 
 	// Return integer value
-	return atoi(CHR(token_current));
+	return atoi(CHR(_token_current));
 }
 
 /* Tokenizer::getInteger
@@ -535,7 +535,7 @@ void Tokenizer::getInteger(int* i)
 	readToken();
 
 	// Set integer value
-	*i = atoi(CHR(token_current));
+	*i = atoi(CHR(_token_current));
 }
 
 /* Tokenizer::getFloat
@@ -547,7 +547,7 @@ float Tokenizer::getFloat()
 	readToken();
 
 	// Return float value
-	return (float) atof(CHR(token_current));
+	return (float)atof(CHR(_token_current));
 }
 
 /* Tokenizer::getFloat
@@ -559,7 +559,7 @@ void Tokenizer::getFloat(float* f)
 	readToken();
 
 	// Set float value
-	*f = (float)atof(CHR(token_current));
+	*f = (float)atof(CHR(_token_current));
 }
 
 /* Tokenizer::getDouble
@@ -572,7 +572,7 @@ double Tokenizer::getDouble()
 	readToken();
 
 	// Return double value
-	return atof(CHR(token_current));
+	return atof(CHR(_token_current));
 }
 
 /* Tokenizer::getDouble
@@ -584,7 +584,7 @@ void Tokenizer::getDouble(double* d)
 	readToken();
 
 	// Set double value
-	*d = atof(CHR(token_current));
+	*d = atof(CHR(_token_current));
 }
 
 /* Tokenizer::getBool
@@ -597,11 +597,11 @@ bool Tokenizer::getBool()
 	readToken();
 
 	// If the token is a string "no" or "false", the value is false
-	if (S_CMPNOCASE(token_current, "no") || S_CMPNOCASE(token_current, "false"))
+	if (S_CMPNOCASE(_token_current, "no") || S_CMPNOCASE(_token_current, "false"))
 		return false;
 
 	// Returns true ("1") or false ("0")
-	return !!atoi(CHR(token_current));
+	return !!atoi(CHR(_token_current));
 }
 
 /* Tokenizer::getBool
@@ -614,24 +614,24 @@ void Tokenizer::getBool(bool* b)
 	readToken();
 
 	// If the token is a string "no" or "false", the value is false
-	if (S_CMPNOCASE(token_current, "no") || S_CMPNOCASE(token_current, "false"))
+	if (S_CMPNOCASE(_token_current, "no") || S_CMPNOCASE(_token_current, "false"))
 		*b = false;
 	else
-		*b = !!atoi(CHR(token_current));
+		*b = !!atoi(CHR(_token_current));
 }
 
 void Tokenizer::skipSection(string open, string close)
 {
 	int level = 0;
 	readToken();
-	while (!(token_current.empty() && !qstring))
+	while (!(_token_current.empty() && !_qstring))
 	{
 		// Increase depth level if another opener
-		if (token_current == open)
+		if (_token_current == open)
 			level++;
 
 		// Check for section closer
-		else if (token_current == close)
+		else if (_token_current == close)
 		{
 			if (level == 0)
 				break;

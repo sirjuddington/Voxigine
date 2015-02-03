@@ -17,21 +17,21 @@ enum CommentTypes
 class Tokenizer
 {
 private:
-	char*		current;		// Current position
-	char*		start;			// Start of text
-	char*		end;			// End of text
-	uint32_t	size;			// Size of text
-	uint32_t	position;		// Current position
-	uint8_t		comments;		// See CommentTypes enum
-	bool		debug;			// If true every getToken() is printed to the console
-	string		special;		// A string defining the 'special characters'. These will always be parsed as separate tokens
-	string		name;			// What file/entry/chunk is being tokenized
-	bool		qstring;		// True if the last read token was a quoted string
-	uint32_t	line;			// The current line number
-	uint32_t	t_start;		// The starting position of the last-read token
-	uint32_t	t_end;			// The ending position of the last-read token
-	string		token_current;	// Current token data
-	bool		decorate;		// Whether to parse doom builder //$ decorate comments
+	char*		_current;		// Current position
+	char*		_start;			// Start of text
+	char*		_end;			// End of text
+	uint32_t	_size;			// Size of text
+	uint32_t	_position;		// Current position
+	uint8_t		_comments;		// See CommentTypes enum
+	bool		_debug;			// If true every getToken() is printed to the console
+	string		_special;		// A string defining the 'special characters'. These will always be parsed as separate tokens
+	string		_name;			// What file/entry/chunk is being tokenized
+	bool		_qstring;		// True if the last read token was a quoted string
+	uint32_t	_line;			// The current line number
+	uint32_t	_token_start;	// The starting position of the last-read token
+	uint32_t	_token_end;		// The ending position of the last-read token
+	string		_token_current;	// Current token data
+	bool		_decorate;		// Whether to parse doom builder //$ decorate comments
 
 
 	void	readToken(bool toeol = false);
@@ -40,16 +40,15 @@ public:
 	Tokenizer(CommentTypes comments_style = COMMENTS_DEFAULT);
 	~Tokenizer();
 
-	void	setSpecialCharacters(string special) { this->special = special; }
-	void	enableDebug(bool debug = true) { this->debug = debug; }
-	void	enableDecorate(bool enable) { decorate = enable; }
+	void	setSpecialCharacters(string special) { _special = special; }
+	void	enableDebug(bool debug = true) { _debug = debug; }
+	void	enableDecorate(bool enable) { _decorate = enable; }
 
-	string	getName() { return name; }
+	string	getName() { return _name; }
 	bool	openFile(string filename, uint32_t offset = 0, uint32_t length = 0);
 	bool	openString(string text, uint32_t offset = 0, uint32_t length = 0, string source = "unknown");
 	bool	openMem(const char* mem, uint32_t length, string source);
 	bool	openMem(const uint8_t* mem, uint32_t length, string source);
-	//bool	openMem(MemChunk* mc, string source);
 	bool	isWhitespace(char p);
 	bool	isSpecialCharacter(char p);
 	bool	incrementCurrent();
@@ -71,10 +70,10 @@ public:
 	void	getDouble(double* d);
 	void	getBool(bool* b);
 
-	bool		quotedString() { return qstring; }
-	uint32_t	lineNo() { return line; }
-	uint32_t	tokenStart() { return t_start; }
-	uint32_t	tokenEnd() { return t_end; }
+	bool		quotedString() { return _qstring; }
+	uint32_t	lineNo() { return _line; }
+	uint32_t	tokenStart() { return _token_start; }
+	uint32_t	tokenEnd() { return _token_end; }
 
 	void	skipSection(string open, string close);
 };

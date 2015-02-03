@@ -309,7 +309,7 @@ bool Console::handleKeyPress(sf::Event::KeyEvent& event)
 	// Backspace
 	else if (event.code == sf::Keyboard::BackSpace && caret_position > 0)
 	{
-		if (caret_position >= cmd_current.length())
+		if (caret_position >= (int)cmd_current.length())
 			cmd_current.pop_back();
 		else
 			cmd_current.erase(cmd_current.begin() + caret_position - 1);
@@ -358,7 +358,7 @@ bool Console::handleKeyPress(sf::Event::KeyEvent& event)
 	// Right
 	else if (event.code == sf::Keyboard::Right)
 	{
-		if (caret_position < cmd_current.length())
+		if (caret_position < (int)cmd_current.length())
 			caret_position++;
 	}
 
@@ -381,7 +381,7 @@ bool Console::handleText(sf::Event::TextEvent& event)
 	if (event.unicode > 31 && event.unicode < 0x80 && event.unicode != '`')
 	{
 		//cmd_current += event.unicode;
-		if (caret_position >= cmd_current.length())
+		if (caret_position >= (int)cmd_current.length())
 			cmd_current += event.unicode;
 		else
 			cmd_current.insert(cmd_current.begin() + caret_position, event.unicode);
@@ -425,7 +425,7 @@ void Console::draw(sf::RenderWindow* window)
 	sf::RectangleShape background;
 	background.setPosition(-4.0f, -4.0f);
 	background.setSize(sf::Vector2f(window->getSize().x + 8.0f, console_height + 4.0f));
-	background.setFillColor(sf::Color(0, 100, 255, 200 * slide_anim));
+	background.setFillColor(sf::Color(0, 100, 255, uint8_t(200 * slide_anim)));
 	background.setOutlineThickness(2.0f);
 	background.setOutlineColor(sf::Color::White);
 	window->draw(background);
@@ -437,7 +437,7 @@ void Console::draw(sf::RenderWindow* window)
 		sf::Text line;
 		line.setCharacterSize(font_size);
 		line.setFont(console_font);
-		line.setColor(sf::Color(255, 255, 255, 255 * slide_anim));
+		line.setColor(sf::Color(255, 255, 255, uint8_t(255 * slide_anim)));
 		
 		// Console log
 		for (long a = log.size() - 1; a >= 0; a--)
@@ -461,7 +461,7 @@ void Console::draw(sf::RenderWindow* window)
 		else if (caret_ticker.getElapsedTime().asMilliseconds() < 300)
 		{
 			string caret = "  ";
-			for (unsigned a = 0; a < caret_position; a++)
+			for (int a = 0; a < caret_position; a++)
 				caret += " ";
 			caret += "_";
 			line.setString(caret);

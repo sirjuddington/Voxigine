@@ -123,6 +123,9 @@ void logMessage(unsigned level, const string message, ...)
 	Console::logMessage(str.data());
 }
 
+/* stringCompareNoCase
+ * Compares two strings, ignoring case
+ *******************************************************************/
 int stringCompareNoCase(string left, string right)
 {
 	// Yay C++11
@@ -131,6 +134,9 @@ int stringCompareNoCase(string left, string right)
 	return left.compare(right);
 }
 
+/* stringEqualNoCase
+ * Returns true if both strings are equal
+ *******************************************************************/
 bool stringEqualNoCase(string left, string right)
 {
 	if (left.length() == right.length())
