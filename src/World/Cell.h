@@ -12,6 +12,7 @@ private:
 	uint8_t	_height_lod1[16][16];
 	uint8_t	_height_lod2[8][8];
 	uint8_t	_height_lod3[4][4];
+	bool	_lod_generated;
 
 public:
 	Cell(int zone_x, int zone_y);
@@ -21,9 +22,11 @@ public:
 	int		zoneY() { return _zone_y; }
 	float	heightAt(uint8_t lod, uint8_t x, uint8_t y);
 
+	void	setHeightAt(uint8_t x, uint8_t y, uint8_t height);
+
 	void	generateLod();
+	uint8_t	average(unsigned x1, unsigned y1, unsigned x2, unsigned y2);
 	void	generateRandom(uint8_t min, uint8_t max);
-	void	generateVBOs();
 
 	// testing
 	void	generateBump();

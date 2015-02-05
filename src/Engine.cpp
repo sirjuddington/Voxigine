@@ -34,6 +34,7 @@
 #include "Utilities/Tokenizer.h"
 #include "Renderer/StandardRenderer.h"
 #include "Game/Player.h"
+#include "Utilities/Random.h"
 #include <SFML/Graphics.hpp>
 #include <fstream>
 
@@ -63,6 +64,7 @@ CVAR(Bool, vid_vsync, true, CVAR_SAVE)
 CVAR(Int, vid_max_framerate, 120, CVAR_SAVE)
 CVAR(Float, mouse_sensitivity, 0.3f, CVAR_SAVE)
 CVAR(Bool, test_slow, false, CVAR_SAVE)
+CVAR(Float, max_view_distance, 2048, CVAR_SAVE)
 
 
 /*******************************************************************
@@ -89,6 +91,9 @@ bool Engine::init()
 
 	// Init GLEW
 	glewInit();
+
+	// Init random number generator
+	Random::init();
 
 	// Create/init renderer
 	renderer = new StandardRenderer();
@@ -221,13 +226,13 @@ bool Engine::mainLoop()
 		if (!Console::isActive())
 		{
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-				player.move(0.1f * frame_mult);
+				player.move(0.3f * frame_mult);
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-				player.move(-0.1f * frame_mult);
+				player.move(-0.3f * frame_mult);
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-				player.strafe(-0.1f * frame_mult);
+				player.strafe(-0.3f * frame_mult);
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-				player.strafe(0.1f * frame_mult);
+				player.strafe(0.3f * frame_mult);
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 				player.turn(-1.0f * frame_mult);
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))

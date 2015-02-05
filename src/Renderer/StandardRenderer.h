@@ -14,14 +14,16 @@ private:
 	unsigned			_vbo_vertices;
 	unsigned			_vbo_indices;
 	unsigned			_n_quads;
+	uint8_t				_current_lod_level;
 	OpenGL::vertex_t*	_vertices;
 
 public:
 	RenderCell(Cell* cell);
 	~RenderCell();
 
-	void		generateVBO();
-	void		render();
+	void		generateVBO(uint8_t lod_level);
+	void		unloadVBO();
+	void		render(fpoint3_t cam_position);
 };
 
 class StandardRenderer : public Renderer
